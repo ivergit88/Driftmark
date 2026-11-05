@@ -64,6 +64,15 @@ textarea { width: 100%; min-height: 155px; resize: vertical; display: block; bor
 textarea:focus-visible { outline: none; }
 .run-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-block: 14px 9px; }
 .model-field { display: grid; min-width: 0; gap: 4px; }
+.run-bar .model-field { flex: 1; }
+.run-bar select { width: 100%; }
+.release-search { border-block: 1px solid var(--line); padding-block: 12px; margin-block: 2px 17px; }
+.release-search summary { cursor: pointer; color: var(--indigo); font-weight: 650; font-size: .9rem; }
+.search-form { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 8px; margin-block: 12px 9px; align-items: end; }
+.search-form label { font-size: .8rem; font-weight: 600; }
+.search-form input { margin-top: 4px; }
+.release-search li { margin-top: 9px; font-size: .9rem; }
+.release-search li p { font-size: .82rem; color: var(--muted); }
 .model-field label { font-size: .78rem; font-weight: 650; color: var(--muted); }
 select, input { width: 100%; min-width: 0; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 9px; }
 .notice { color: var(--indigo); font-size: .9rem; margin-top: 10px; }
@@ -107,6 +116,7 @@ dialog p { margin-bottom: 5px; }
   .proof { width: min(100% - 12px, 420px); margin-left: 4px; }
   .section-head { display: block; }
   .limit { display: block; margin-top: 6px; }
+  .search-form { grid-template-columns: 1fr; }
   .export-actions { justify-content: flex-start; margin-top: 12px; }
   .export-actions .hint { text-align: left; }
 }

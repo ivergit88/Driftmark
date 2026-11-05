@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { exampleCandidates, harbor } from "./fixtures.js";
-import { getOtariConfig, requestReview, RequestError } from "./otari.js";
+import { checkExport, getOtariConfig, requestReview, RequestError, searchReleases } from "./otari.js";
 import { prepareReview, verifyFindings } from "./review.js";
 
 const ASSETS = new Map([
@@ -50,15 +50,17 @@ function publicConfig(config) {
   return { connected: Boolean(config.key), region: config.region, models: config.models };
 }
 
-function readConnection({ key, region, models }) {
-  if (typeof key !== "string" || !/^otk_[\w-]{16,250}$/u.test(key.trim())) {
+function readConnection({ key, region, models }, existingKey) {
+  if (typeof key !== "string") throw new RequestError(400, "Enter a workspace API key.");
+  const nextKey = key.trim() || existingKey;
+  if (!/^otk_[\w-]{16,250}$/u.test(nextKey)) {
     throw new RequestError(400, "Enter the workspace key beginning with otk_.");
   }
   if (typeof region !== "string" || typeof models !== "string") {
     throw new RequestError(400, "Choose your workspace region and model.");
   }
   try {
-    return getOtariConfig({ OTARI_API_KEY: key, OTARI_REGION: region, OTARI_MODELS: models });
+    return getOtariConfig({ OTARI_API_KEY: nextKey, OTARI_REGION: region, OTARI_MODELS: models });
   } catch (error) {
     throw new RequestError(400, error.message);
   }
@@ -66,7 +68,16 @@ function readConnection({ key, region, models }) {
 
 export function createApp({ env = process.env, fetcher = fetch } = {}) {
   let config = getOtariConfig(env);
-  let reviewInProgress = false;
+  let hostedInProgress = false;
+  async function runHosted(action) {
+    if (hostedInProgress) throw new RequestError(409, "Another Otari request is running. Wait for it to finish.");
+    hostedInProgress = true;
+    try {
+      return await action();
+    } finally {
+      hostedInProgress = false;
+    }
+  }
   return createServer(async (request, response) => {
     response.setHeader("Cache-Control", "no-store");
     response.setHeader("X-Content-Type-Options", "nosniff");
@@ -102,24 +113,28 @@ export function createApp({ env = process.env, fetcher = fetch } = {}) {
         });
       }
       if (request.method === "POST" && pathname === "/api/connect") {
-        config = readConnection(await readJson(request));
+        if (hostedInProgress) throw new RequestError(409, "Wait for the current Otari request before changing the connection.");
+        config = readConnection(await readJson(request), config.key);
         return json(response, 200, publicConfig(config));
       }
+      if (request.method === "POST" && pathname === "/api/search") {
+        const { query, domain } = await readJson(request);
+        return json(response, 200, await runHosted(() => searchReleases(config, query, domain, fetcher)));
+      }
+      if (request.method === "POST" && pathname === "/api/check") {
+        const { markdown } = await readJson(request);
+        return json(response, 200, await runHosted(() => checkExport(config, markdown, fetcher)));
+      }
       if (request.method === "POST" && pathname === "/api/review") {
-        const { document, release, model } = await readJson(request);
+        const { document, release, model, auditModel } = await readJson(request);
         let review;
         try {
           review = prepareReview(document, release);
         } catch (error) {
           throw new RequestError(400, error.message);
         }
-        if (reviewInProgress) throw new RequestError(409, "A review is already running. Wait for it to finish.");
-        reviewInProgress = true;
-        try {
-          return json(response, 200, await requestReview(config, model || config.models[0], review, fetcher));
-        } finally {
-          reviewInProgress = false;
-        }
+        return json(response, 200, await runHosted(() =>
+          requestReview(config, model || config.models[0], review, fetcher, { auditModel })));
       }
       throw new RequestError(404, "This page was not found.");
     } catch (error) {

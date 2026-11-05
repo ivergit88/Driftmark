@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getOtariConfig, requestReview } from "../src/otari.js";
+import { getOtariConfig, requestReview, searchReleases, checkExport } from "../src/otari.js";
 import { harbor, exampleCandidates } from "../src/fixtures.js";
 import { prepareReview } from "../src/review.js";
 
@@ -59,4 +59,69 @@ test("reports invalid and truncated output as a failed review", async () => {
       return Response.json({ choices: [choice] });
     }), /incomplete or invalid/);
   }
+});
+
+test("the second model audits literal candidates and can only veto, not add or rewrite", async () => {
+  const models = getOtariConfig({
+    OTARI_API_KEY: "fake-test-token", OTARI_MODELS: "test/drafter,test/auditor",
+  });
+  const requests = [];
+  const result = await requestReview(models, "test/drafter", review, async (_url, options) => {
+    const body = JSON.parse(options.body);
+    requests.push(body.model);
+    const drafter = body.model === "test/drafter";
+    return Response.json({
+      choices: [{ message: { content: JSON.stringify(drafter
+        ? { findings: exampleCandidates }
+        : { approvedDocLines: [3, 5] }) } }],
+      usage: { cost_usd: "0.000431" },
+    }, { headers: { "Otari-Request-ID": drafter ? "draft-id" : "audit-id", "Otari-Fallback": "true" } });
+  }, { auditModel: "test/auditor" });
+  assert.deepEqual(requests, ["test/drafter", "test/auditor"]);
+  assert.deepEqual(result.findings.map(({ docLine }) => docLine), [3, 5]);
+  assert.equal(result.auditRejected, 1);
+  assert.equal(result.receipt.audit.requestId, "audit-id");
+  assert.equal(result.receipt.requestId, "draft-id");
+  assert.equal(result.receipt.fallback, true);
+  assert.equal(result.receipt.usage.costUsd, "0.000431");
+});
+
+test("surfaces an Otari budget refusal using the stable response headers", async () => {
+  await assert.rejects(requestReview(config, config.models[0], review, async () => new Response(null, {
+    status: 403,
+    headers: { "Otari-Error-Code": "budget_exceeded", "Otari-Budget-Scope": "workspace" },
+  })), /spending limit.*workspace/);
+});
+
+test("explains a pricing refusal separately from an empty workspace balance", async () => {
+  await assert.rejects(requestReview(config, config.models[0], review, async () => new Response(null, {
+    status: 402, headers: { "Otari-Error-Code": "pricing_required" },
+  })), /no usable price/);
+});
+
+test("search shows gateway sources and filters unsafe URLs without reading local docs", async () => {
+  const result = await searchReleases(config, "Harbor 2.0 release", "github.com", async (url, options) => {
+    assert.ok(url.endsWith("/api/v1/search"));
+    assert.deepEqual(JSON.parse(options.body).search_domain_filter, ["github.com"]);
+    return Response.json({ search_tool: "example-test", results: [
+      { url: "https://github.com/example/harbor/releases/tag/v2", title: "Harbor v2", snippet: "A release." },
+      { url: "javascript:alert(1)", title: "Invalid" },
+      { url: "https://notgithub.com/example", title: "Wrong host" },
+    ] });
+  });
+  assert.equal(result.results.length, 1);
+  assert.equal(result.results[0].title, "Harbor v2");
+});
+
+test("sandbox check sends fixed code and requires matching Markdown output", async () => {
+  const input = "# Quickstart\n\n```sh\nharbor setup\n```\n";
+  const result = await checkExport(config, input, async (url, options) => {
+    assert.ok(url.endsWith("/api/v1/code/execute"));
+    assert.match(JSON.parse(options.body).code, /import base64/);
+    return Response.json({ return_code: 0, stdout: JSON.stringify({
+      sha256: "3377b9372ae4437ed919a1c59939e3682d19976b3b8104a2ee6f00a1b73c19cc",
+      unclosedFenceLine: null,
+    }) });
+  });
+  assert.equal(result.unclosedFenceLine, null);
 });

@@ -50,6 +50,17 @@
         </div>
         <span class="limit">12,000 characters per input</span>
       </div>
+      <details class="release-search">
+        <summary>Find official release notes with Otari</summary>
+        <form id="search-form" class="search-form">
+          <label>Release query<input id="search-query" maxlength="180" placeholder="Project name and release version" required></label>
+          <label>Official domain<input id="search-domain" maxlength="100" value="github.com" required></label>
+          <button class="button plain" type="submit" id="search" disabled>Find release notes</button>
+        </form>
+        <p class="hint">Otari searches the domain you choose. Open a result and paste the relevant release text below.</p>
+        <p class="notice" id="search-notice" role="status"></p>
+        <ul id="search-results"></ul>
+      </details>
       <form id="review-form">
         <div class="inputs">
           <label class="input-sheet">
@@ -63,8 +74,12 @@
         </div>
         <div class="run-bar">
           <div class="model-field">
-            <label for="model">Hosted model</label>
+            <label for="model">Drafting model</label>
             <select id="model" disabled><option>Connect Otari to choose a model</option></select>
+          </div>
+          <div class="model-field">
+            <label for="audit-model">Audit model</label>
+            <select id="audit-model" disabled><option value="">Skip the second model</option></select>
           </div>
           <button class="button primary" type="submit" id="run" disabled>Review with Otari</button>
         </div>
@@ -82,11 +97,13 @@
         </div>
         <div class="export-actions">
           <button class="button plain" id="save-receipt" type="button">Download receipt</button>
+          <button class="button plain" id="check-export" type="button" disabled>Check Markdown in Otari</button>
           <button class="button primary" id="download" type="button" disabled>Download revised Markdown</button>
           <span class="hint" id="selection" role="status">0 edits selected</span>
         </div>
       </div>
       <div id="finding-list" class="findings"></div>
+      <p id="check-notice" class="notice" role="status"></p>
       <details class="receipt">
         <summary>Run receipt</summary>
         <dl id="receipt-fields"></dl>

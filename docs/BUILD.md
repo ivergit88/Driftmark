@@ -9,8 +9,16 @@ Driftmark helps maintainers review stale documentation before shipping a release
 
 ## Acceptance criteria
 
-- A fresh clone runs with Node 22+ and has a clearly labeled no-key example. The app never routes arbitrary user inputs to the example response.
+- A fresh clone runs with Node 22.9+ and has a clearly labeled no-key example. The app never routes arbitrary user inputs to the example response.
 - Live review uses a hosted Otari endpoint with a server-side key, bounded input and output, and visible errors. The UI distinguishes actual returned metadata from fixture data.
 - A proposed edit needs a literal quote from both inputs at the declared line. Missing, invented and duplicate references are discarded.
 - Export requires user selection and preserves all unapproved lines and their line endings. An edited input invalidates the current review.
 - An evaluation prints precision and recall against human-labeled line pairs and identifies its mode. Hosted model measurements require actual live calls.
+
+## Current state on November 5
+
+The app has a drafting stage and a distinct, optional audit model that can veto suggestions. Official-domain release search and a fixed Markdown check use Otari’s documented search and code execution APIs. The receipt captures available gateway cost, request ID and fallback headers. Twenty-four local tests pass, including execution of the actual fixed Python check.
+
+The participant signed in to hosted Otari in the in-app browser. The first EU Qwen request returned HTTP 402. Otari’s onboarding panel reported missing model pricing. Billing showed $0.00 with no deposits or credits. Successful inference and tool calls remain pending. A request for permission to email the organizer about registration and the advertised free credits is pending.
+
+The local development service runs from this repository at http://127.0.0.1:4177. It holds the participant’s key only in memory. Re-enter the participant’s saved key after a restart. The code includes support for keeping an existing key while changing model settings.

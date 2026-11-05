@@ -4,6 +4,7 @@ const byId = (id) => document.getElementById(id);
 const docInput = byId("document");
 const releaseInput = byId("release");
 const model = byId("model");
+const auditModel = byId("audit-model");
 const run = byId("run");
 const exampleButton = byId("example");
 const dialog = byId("connection-dialog");
@@ -12,6 +13,8 @@ let config;
 let report;
 let runs = [];
 let working = false;
+let searchReceipt;
+let exportCheck;
 
 function element(tag, value, className) {
   const node = document.createElement(tag);
@@ -40,6 +43,11 @@ async function request(url, payload) {
 function updateControls() {
   run.disabled = working || !config?.connected || !docInput.value.trim() || !releaseInput.value.trim();
   model.disabled = working || !config?.connected;
+  auditModel.disabled = working || !config?.connected || config.models.length < 2;
+  byId("search").disabled = working || !config?.connected;
+  byId("check-export").disabled = working || !config?.connected || !selected.size;
+  byId("download").disabled = working || !selected.size;
+  document.querySelectorAll(".approval input").forEach((input) => { input.disabled = working; });
   exampleButton.disabled = working;
   byId("open-connection").disabled = working;
 }
@@ -50,13 +58,24 @@ function applyConfig(next) {
   byId("open-connection").textContent = next.connected ? "Otari settings" : "Connect Otari";
   const options = next.connected ? next.models : ["Connect Otari to choose a model"];
   model.replaceChildren(...options.map((name) => new Option(name, name)));
+  auditModel.replaceChildren(new Option("Skip the second model", ""));
+  if (next.connected) auditModel.append(...next.models.map((name) => new Option(name, name)));
+  auditModel.value = next.connected && next.models.length > 1 ? next.models[1] : "";
+  syncModels();
   updateControls();
+}
+
+function syncModels() {
+  for (const option of auditModel.options) option.disabled = option.value === model.value;
+  if (auditModel.value === model.value) auditModel.value = "";
 }
 
 function updateSelection() {
   const count = selected.size;
-  byId("download").disabled = count === 0;
   byId("selection").textContent = count + (count === 1 ? " edit selected" : " edits selected");
+  exportCheck = undefined;
+  notice("check-notice");
+  updateControls();
 }
 
 function clearReview() {
@@ -102,14 +121,15 @@ function card(finding) {
 function render(next) {
   clearReview();
   report = next;
-  const { receipt, findings, discarded } = next;
+  const { receipt, findings, discarded, auditRejected } = next;
   const hosted = receipt.mode === "hosted";
   const mode = byId("report-mode");
   mode.textContent = hosted ? "Hosted Otari run" : "Bundled example · no model call";
   mode.toggleAttribute("data-hosted", hosted);
   byId("summary").textContent =
     findings.length + (findings.length === 1 ? " suggested edit" : " suggested edits") +
-    (discarded ? " · " + discarded + (discarded === 1 ? " candidate discarded by validation" : " candidates discarded by validation") : "");
+    (discarded ? " · " + discarded + (discarded === 1 ? " candidate discarded by validation" : " candidates discarded by validation") : "") +
+    (auditRejected ? " · " + auditRejected + " removed by the audit model" : "");
   byId("finding-list").replaceChildren(...(findings.length
     ? findings.map(card)
     : [element("p", "This run found no edits backed by matching quotes.")]));
@@ -118,10 +138,19 @@ function render(next) {
     ["Requested model", receipt.requestedModel],
     ["Returned model", receipt.returnedModel],
     ["Response ID", receipt.responseId],
+    ["Gateway request ID", receipt.requestId],
+    ["Gateway fallback", receipt.fallback === null ? null : String(receipt.fallback)],
     ["Tokens", receipt.usage?.total],
-    ["Elapsed", (receipt.elapsedMs / 1000).toFixed(2) + " s"],
+    ["Drafting cost (USD)", receipt.usage?.costUsd],
+    ["Drafting elapsed", (receipt.elapsedMs / 1000).toFixed(2) + " s"],
     ["Time (UTC)", receipt.timestamp],
   ] : [["Source", "Synthetic Harbor CLI release and deliberately invalid candidate"]];
+  if (receipt.audit) fields.push(
+    ["Audit model", receipt.audit.requestedModel],
+    ["Audit request ID", receipt.audit.requestId],
+    ["Audit cost (USD)", receipt.audit.usage?.costUsd],
+    ["Audit elapsed", (receipt.audit.elapsedMs / 1000).toFixed(2) + " s"],
+  );
   fields.push(["Input fingerprint", receipt.fingerprint]);
   byId("receipt-fields").replaceChildren(...fields.flatMap(([label, value]) =>
     [element("dt", label), element("dd", value ?? "Unavailable")]));
@@ -132,7 +161,8 @@ function render(next) {
   const comparable = runs.filter((entry) => entry.receipt.fingerprint === receipt.fingerprint);
   byId("recent").hidden = !hosted || comparable.length < 2;
   byId("run-history").replaceChildren(...comparable.map(({ receipt: item, count }) =>
-    element("li", item.requestedModel + " · " + count + " edits · " + (item.elapsedMs / 1000).toFixed(2) + " s")));
+    element("li", item.requestedModel + (item.audit ? " with " + item.audit.requestedModel + " audit" : "") +
+      " · " + count + " edits · " + ((item.elapsedMs + (item.audit?.elapsedMs || 0)) / 1000).toFixed(2) + " s")));
 
   byId("results").hidden = false;
   byId("results-title").focus();
@@ -187,6 +217,7 @@ byId("review-form").addEventListener("submit", async (event) => {
   try {
     const next = await request("/api/review", {
       document: docInput.value, release: releaseInput.value, model: model.value,
+      auditModel: auditModel.value || undefined,
     });
     notice("notice");
     render(next);
@@ -200,6 +231,8 @@ byId("review-form").addEventListener("submit", async (event) => {
 byId("open-connection").addEventListener("click", () => {
   byId("region").value = config?.region || "us";
   byId("models").value = config?.models.join(", ") || "";
+  byId("key").required = !config?.connected;
+  byId("key").placeholder = config?.connected ? "Leave blank to keep the current key" : "otk_…";
   notice("connect-notice");
   dialog.showModal();
 });
@@ -222,6 +255,58 @@ byId("connection-form").addEventListener("submit", async (event) => {
   }
 });
 
+model.addEventListener("change", syncModels);
+
+byId("search-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (working || !config?.connected) return;
+  setWorking(true);
+  notice("search-notice", "Searching the chosen domain through Otari…");
+  byId("search-results").replaceChildren();
+  searchReceipt = undefined;
+  try {
+    const result = await request("/api/search", {
+      query: byId("search-query").value, domain: byId("search-domain").value,
+    });
+    searchReceipt = result.receipt;
+    byId("search-results").replaceChildren(...result.results.map((source) => {
+      const row = element("li");
+      const link = element("a", source.title);
+      link.href = source.url;
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      row.append(link, element("p", source.snippet));
+      return row;
+    }));
+    notice("search-notice", result.results.length
+      ? result.results.length + " sources returned by Otari."
+      : "Otari returned no matching public sources on this domain.");
+  } catch (error) {
+    notice("search-notice", error.message, true);
+  } finally {
+    setWorking(false);
+  }
+});
+
+byId("check-export").addEventListener("click", async () => {
+  if (!report || !selected.size || working) return;
+  setWorking(true);
+  notice("check-notice", "Checking the approved Markdown in Otari’s sandbox…");
+  try {
+    const markdown = buildRevision(docInput.value, report.findings, selected);
+    exportCheck = await request("/api/check", { markdown });
+    notice("check-notice", exportCheck.unclosedFenceLine
+      ? "An unclosed Markdown code fence starts on line " + exportCheck.unclosedFenceLine + ". Review that block before export."
+      : "Otari’s sandbox verified the document hash and found no unclosed Markdown code fence.",
+    Boolean(exportCheck.unclosedFenceLine));
+  } catch (error) {
+    exportCheck = undefined;
+    notice("check-notice", error.message, true);
+  } finally {
+    setWorking(false);
+  }
+});
+
 byId("download").addEventListener("click", () => {
   if (!report || !selected.size) return;
   try {
@@ -239,6 +324,8 @@ byId("save-receipt").addEventListener("click", () => {
     findings: report.findings.map(({ docLine, releaseLine }) => ({ docLine, releaseLine })),
     discarded: report.discarded,
     approvedDocLines: [...selected].sort((left, right) => left - right),
+    search: searchReceipt,
+    exportCheck,
   };
   saveFile("driftmark-receipt.json", JSON.stringify(exported, null, 2) + "\n", "application/json");
 });
