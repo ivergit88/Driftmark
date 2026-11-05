@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare your documentation with a release and review each proposed edit against its source.">
+  <title>Driftmark | Release documentation review</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="masthead frame">
+    <a class="brand" href="/" aria-label="Driftmark home">
+      <img src="/mark.svg" alt="" width="39" height="39">
+      <span>Driftmark<small>Release documentation review</small></span>
+    </a>
+    <div class="mast-actions">
+      <span class="connection-status" id="connection-status">Checking Otari setup</span>
+      <button type="button" class="button plain" id="open-connection">Connect Otari</button>
+    </div>
+  </header>
+
+  <main class="frame">
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Catch stale docs<br>before you ship.</h1>
+        <p>Compare a quickstart with the next release. Trace each suggested edit to the lines that support it, then choose what ships.</p>
+        <button class="button example-button" type="button" id="example">Open the Harbor example</button>
+      </div>
+      <div class="proof" aria-hidden="true">
+        <div class="proof-top"><span>Harbor CLI quickstart</span><span>Release 2.0</span></div>
+        <div class="proof-body">
+          <div class="proof-line old"><span>04</span><code>harbor sync</code><small>publish</small></div>
+          <svg class="thread" viewBox="0 0 130 40" fill="none" preserveAspectRatio="none">
+            <path d="M42 1v8c0 17 56 5 56 22v8" stroke="#6964c2" stroke-width="2" stroke-dasharray="4 4"/>
+            <circle cx="42" cy="3" r="3" fill="#6964c2"/><circle cx="98" cy="37" r="3" fill="#6964c2"/>
+          </svg>
+          <div class="proof-line new"><span>04</span><code>harbor sync --apply</code><small>publish</small></div>
+        </div>
+        <div class="proof-bottom"><span class="proof-dot"></span> One line changes the release.</div>
+      </div>
+    </section>
+
+    <section class="workspace" aria-labelledby="workspace-title">
+      <div class="section-head">
+        <div>
+          <h2 id="workspace-title">Review workspace</h2>
+          <p>Paste the docs people read and the release notes they should match.</p>
+        </div>
+        <span class="limit">12,000 characters per input</span>
+      </div>
+      <form id="review-form">
+        <div class="inputs">
+          <label class="input-sheet">
+            <span>Current documentation <small>Markdown or text</small></span>
+            <textarea id="document" maxlength="12000" required spellcheck="false" placeholder="# Quickstart&#10;Paste the instructions users follow today."></textarea>
+          </label>
+          <label class="input-sheet release-sheet">
+            <span>New release notes <small>Source of truth</small></span>
+            <textarea id="release" maxlength="12000" required spellcheck="false" placeholder="# Release notes&#10;Paste what changed in this release."></textarea>
+          </label>
+        </div>
+        <div class="run-bar">
+          <div class="model-field">
+            <label for="model">Hosted model</label>
+            <select id="model" disabled><option>Connect Otari to choose a model</option></select>
+          </div>
+          <button class="button primary" type="submit" id="run" disabled>Review with Otari</button>
+        </div>
+        <p class="hint" id="run-hint">The bundled example runs locally. A hosted review sends both inputs to Otari.</p>
+      </form>
+      <p id="notice" class="notice" role="status"></p>
+    </section>
+
+    <section id="results" class="results" aria-labelledby="results-title" hidden>
+      <div class="section-head results-head">
+        <div>
+          <div id="report-mode" class="mode"></div>
+          <h2 id="results-title" tabindex="-1">Review findings</h2>
+          <p id="summary"></p>
+        </div>
+        <div class="export-actions">
+          <button class="button plain" id="save-receipt" type="button">Download receipt</button>
+          <button class="button primary" id="download" type="button" disabled>Download revised Markdown</button>
+          <span class="hint" id="selection" role="status">0 edits selected</span>
+        </div>
+      </div>
+      <div id="finding-list" class="findings"></div>
+      <details class="receipt">
+        <summary>Run receipt</summary>
+        <dl id="receipt-fields"></dl>
+        <p>Matching quotes establish provenance. Read the evidence and the proposed edit before approving.</p>
+      </details>
+      <section class="recent" id="recent" aria-labelledby="recent-title" hidden>
+        <h3 id="recent-title">Hosted runs on these inputs</h3>
+        <p>The same input fingerprint lets you compare models or reruns.</p>
+        <ul id="run-history"></ul>
+      </section>
+    </section>
+
+    <dialog id="connection-dialog" aria-labelledby="connection-title">
+      <form id="connection-form">
+        <div class="dialog-head">
+          <h2 id="connection-title">Connect hosted Otari</h2>
+          <button type="button" class="button plain close" id="close-connection" aria-label="Close setup">×</button>
+        </div>
+        <p>In the Otari dashboard, open <strong>API Keys</strong> and create a workspace key. Use the region and model ID shown in your workspace.</p>
+        <label for="key">Workspace API key</label>
+        <input type="password" id="key" autocomplete="off" placeholder="otk_…" required maxlength="260">
+        <label for="region">Workspace region</label>
+        <select id="region"><option value="us">United States</option><option value="eu">Europe</option></select>
+        <label for="models">Model IDs, up to three</label>
+        <input id="models" autocomplete="off" spellcheck="false" required maxlength="452">
+        <p class="hint">The key stays in this local server’s memory until it exits. The next review checks that it works with Otari.</p>
+        <p class="notice" id="connect-notice" role="status"></p>
+        <button class="button primary" id="save-connection" type="submit">Save local connection</button>
+      </form>
+    </dialog>
+  </main>
+  <footer class="frame footer"><span>Driftmark</span><span>A release preflight for open-source maintainers.</span></footer>
+</body>
+</html>
