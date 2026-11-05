@@ -2,13 +2,13 @@
 
 Driftmark is a release preflight for open-source maintainers. It compares existing documentation with release notes, proposes line-level corrections backed by quotes from both sources, and leaves the export decision with the maintainer.
 
-This checklist tracks the remaining submission evidence. A hosted EU review with `alibaba/qwen-3.5-35b-a3b` returned HTTP 402 on November 5. Otari’s onboarding panel reported that it could not price the requested model. Billing separately showed $0.00 and no credits. Successful hosted inference, public repository publication, and the hackathon entry remain pending.
+This checklist tracks the remaining submission evidence. A hosted EU review with `alibaba/qwen-3.5-35b-a3b` returned HTTP 402 on November 5. Otari’s onboarding panel reported that it could not price the requested model. Billing separately showed $0.00 and no credits. The public repository and hackathon branch have been published. Successful hosted inference and the hackathon entry remain pending.
 
 ## Submission checklist
 
-- [ ] Publish the project in a public GitHub repository. Add the verified repository URL here: **Pending**.
-- [ ] Push the submission branch named `devs-wilding`. Confirm it contains the intended release and can be cloned without credentials or secrets.
-- [ ] Confirm the first Otari integration commit is `db9f8dc3aa58ce174f4cf1e2c9a96d1e681f58bb`. Link the commit and check that it is present in the public repository: **Pending**.
+- [x] Publish the project in a public GitHub repository. https://github.com/ivergit88/Driftmark
+- [x] Push the submission branch named `devs-wilding`. https://github.com/ivergit88/Driftmark/tree/devs-wilding
+- [x] Preserve the first Otari integration commit. https://github.com/ivergit88/Driftmark/commit/db9f8dc3aa58ce174f4cf1e2c9a96d1e681f58bb
 - [ ] Use the participant's hosted Otari workspace to make real application requests. Save request IDs or dashboard evidence and record the exact models, returned metadata, usage, latency, and any fallback behavior. Hosted use is **Pending live verification**.
 - [ ] Verify the configured model IDs and open-weight status from reliable model documentation. Demonstrate one qualifying model for 20 points. For the additional 10 points, demonstrate two distinct open-weight models doing different jobs. Neither qualification is confirmed yet.
 - [ ] Review the evidence matrix below against live runs. Only claim a feature when the recording shows it actually used in Driftmark.
@@ -62,9 +62,9 @@ The participant should answer these after using Driftmark. Do not fill in respon
 
 ## Links and verified activity
 
-- Public repository: **Pending**
-- `devs-wilding` branch: **Pending**
-- First integration commit `db9f8dc3aa58ce174f4cf1e2c9a96d1e681f58bb`: **Pending**
+- Public repository. https://github.com/ivergit88/Driftmark
+- Hackathon branch. https://github.com/ivergit88/Driftmark/tree/devs-wilding
+- First integration commit. https://github.com/ivergit88/Driftmark/commit/db9f8dc3aa58ce174f4cf1e2c9a96d1e681f58bb
 - Actual issues or pull requests: **Pending repository check**
 - Hosted Otari request evidence: **Pending live verification**
 - Participant-recorded demo: **Pending**

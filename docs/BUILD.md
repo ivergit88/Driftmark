@@ -19,6 +19,8 @@ Driftmark helps maintainers review stale documentation before shipping a release
 
 The app has a drafting stage and a distinct, optional audit model that can veto suggestions. Official-domain release search and a fixed Markdown check use Otari’s documented search and code execution APIs. The receipt captures available gateway cost, request ID and fallback headers. Twenty-four local tests pass, including execution of the actual fixed Python check.
 
-The participant signed in to hosted Otari in the in-app browser. The first EU Qwen request returned HTTP 402. Otari’s onboarding panel reported missing model pricing. Billing showed $0.00 with no deposits or credits. Successful inference and tool calls remain pending. A request for permission to email the organizer about registration and the advertised free credits is pending.
+The participant signed in to hosted Otari in the in-app browser. The first EU Qwen request returned HTTP 402. Otari’s onboarding panel reported missing model pricing. Billing showed $0.00 with no deposits or credits. Successful inference and tool calls remain pending. With the participant’s explicit permission, a registration and free-credit request was emailed to the organizer on November 5. Confirmation is pending.
+
+The public repository is https://github.com/ivergit88/Driftmark with main and devs-wilding branches. The first Otari integration commit is preserved.
 
 The local development service runs from this repository at http://127.0.0.1:4177. It holds the participant’s key only in memory. Re-enter the participant’s saved key after a restart. The code includes support for keeping an existing key while changing model settings.
