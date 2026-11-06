@@ -17,7 +17,7 @@ This checklist tracks the remaining submission evidence. A hosted EU review with
 - [ ] Record a 3–5 minute screen capture with the participant's own voice. Do not use AI-generated video or voice. Confirm the recording shows the real application and actual Otari activity.
 - [ ] Submit the entry on DoraHacks and verify the resulting public entry URL: **Pending**.
 
-The stated deadline is November 12 at 01:59 Moscow time. The event prose also says November 11 at 23:59 without a timezone. Treat the earlier prose deadline as controlling and aim to submit early on November 11 Moscow time.
+The organizer confirmed email registration on November 6 and requested separate DoraHacks registration. The organizer gave November 11 at 23:59 EST, which is November 12 at 07:59 Moscow time. DoraHacks displays November 12 at 01:59 Moscow time. Aim to submit on November 11 Moscow time, before the earlier platform cutoff.
 
 ## Evidence matrix
 
@@ -40,7 +40,7 @@ The implementation notes in `src/otari.js` describe code paths, not proof that t
 
 ## Timed participant demo outline
 
-Target runtime is 3 minutes 45 seconds. Use the participant's own live narration and a direct screen recording. Show real runs only. If any call fails or a feature is unavailable, say so and leave that claim out of the submission.
+Target runtime is 3 minutes 45 seconds. Use the participant's own live narration and a direct screen recording. Rehearse with the [pip 25.3 case](../examples/pip-25.3). This pairs a team guide written for the demo with the actual pip release changes. Show real runs only. If any call fails or a feature is unavailable, leave that claim out of the submission.
 
 | Time | What to show and say |
 | --- | --- |

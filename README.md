@@ -53,3 +53,5 @@ Driftmark compares the text you provide. A matching source quotation establishes
 The application reports Otari request IDs, costs, routing attempts and fallback status when the gateway returns them. Workspace budgets, routing policies and gateway guardrails need to be configured in Otari and exercised in real requests before making judging claims.
 
 See `docs/ENTRY.md` for the submission checklist and participant demo outline. The hackathon requires a 3–5 minute screen recording with the participant’s own voice. Hosted inference and final submission are still pending.
+
+For a rehearsal based on an actual release, use the [pip 25.3 sample](examples/pip-25.3). It has three expected corrections and one command that should stay as written.
